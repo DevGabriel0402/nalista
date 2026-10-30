@@ -1,1 +1,20 @@
-{"name":"Na Lista — compras e despensa","short_name":"Na Lista","lang":"pt-BR","start_url":"/","display":"standalone","background_color":"#f5f6f2","theme_color":"#f5f6f2","icons":[{"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"},{"src":"favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}
+{
+  "name": "Na Lista — Compras e Despensa Inteligente",
+  "short_name": "Na Lista",
+  "description": "Lista de compras inteligente com cálculo em tempo real, leitor de notas fiscais e gestão de despensa.",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0b0f17",
+  "theme_color": "#0f172a",
+  "categories": ["utilities", "shopping", "lifestyle"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

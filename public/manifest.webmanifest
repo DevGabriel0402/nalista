@@ -1,15 +1,18 @@
 {
-  "name": "Na Lista — compras e despensa",
+  "name": "Na Lista — Compras e Despensa Inteligente",
   "short_name": "Na Lista",
+  "description": "Lista de compras inteligente com cálculo em tempo real, leitor de notas fiscais e gestão de despensa.",
   "lang": "pt-BR",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f5f6f2",
-  "theme_color": "#f5f6f2",
+  "orientation": "portrait-primary",
+  "background_color": "#0b0f17",
+  "theme_color": "#0f172a",
+  "categories": ["utilities", "shopping", "lifestyle"],
   "icons": [
     {
       "src": "/icon.svg",
-      "sizes": "any",
+      "sizes": "192x192 512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }

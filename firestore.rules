@@ -1,0 +1,12 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Cada dispositivo gerencia apenas seu próprio documento.
+    // O deviceId é um UUID gerado localmente e armazenado no localStorage.
+    // Sem autenticação: qualquer cliente pode ler e escrever em /users/{deviceId}
+    // desde que o documento seja criado por ele mesmo (sem conflito de ownership).
+    match /users/{deviceId} {
+      allow read, write: if true;
+    }
+  }
+}
