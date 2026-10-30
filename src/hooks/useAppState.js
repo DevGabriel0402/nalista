@@ -23,7 +23,10 @@ const itemKey = (item) => `${item.name.trim().toLocaleLowerCase()}|${item.unit}`
 
 function loadSavedState(userId) {
   try {
-    const saved = JSON.parse(localStorage.getItem(userId ? `nalista-v1-${userId}` : "nalista-v1"));
+    const userKey = userId ? `nalista-v1-${userId}` : "nalista-v1";
+    const stored = localStorage.getItem(userKey);
+    const legacy = userId && !stored ? localStorage.getItem("nalista-v1") : null;
+    const saved = JSON.parse(stored || legacy);
     return saved ? { ...createInitialState(), ...saved } : createInitialState();
   } catch {
     return createInitialState();

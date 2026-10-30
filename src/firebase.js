@@ -1,6 +1,6 @@
 // firebase.js — Inicialização modular do Firebase
 import { initializeApp } from 'firebase/app';
-import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -25,17 +25,10 @@ let auth = null;
 if (isFirebaseConfigured) {
   try {
     app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
-    auth = getAuth(app);
-
-    // Habilita persistência offline (IndexedDB) para funcionar sem internet
-    enableIndexedDbPersistence(db).catch((err) => {
-      if (err.code === 'failed-precondition') {
-        console.warn('Firebase: persistência offline indisponível (múltiplas abas abertas).');
-      } else if (err.code === 'unimplemented') {
-        console.warn('Firebase: persistência offline não suportada neste navegador.');
-      }
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache()
     });
+    auth = getAuth(app);
 
     console.log('🔥 Firebase conectado com sucesso!');
   } catch (error) {

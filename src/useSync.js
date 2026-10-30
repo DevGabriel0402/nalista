@@ -38,6 +38,7 @@ function saveLocal(state, userId) {
 export function useSync(state, setState, setSyncStatus, userId) {
   const debounceRef = useRef(null);
   const isRemoteUpdateRef = useRef(false); // evita loop: remoto → local → remoto
+  const remoteReadyRef = useRef(false);
   const firestoreDocRef = useMemo(
     () => isFirebaseConfigured && db && userId ? doc(db, 'users', userId) : null,
     [userId]
@@ -50,8 +51,10 @@ export function useSync(state, setState, setSyncStatus, userId) {
 
   // ── 2. Assinar onSnapshot para receber atualizações remotas ──────────────
   useEffect(() => {
+    remoteReadyRef.current = false;
     if (!isFirebaseConfigured || !firestoreDocRef || !userId) {
       setSyncStatus('offline');
+      remoteReadyRef.current = true;
       return;
     }
 
@@ -61,6 +64,7 @@ export function useSync(state, setState, setSyncStatus, userId) {
       (snap) => {
         if (!snap.exists()) {
           // Documento ainda não existe — push dados locais imediatamente
+          remoteReadyRef.current = true;
           setSyncStatus('idle');
           return;
         }
@@ -73,6 +77,7 @@ export function useSync(state, setState, setSyncStatus, userId) {
           return;
         }
 
+        remoteReadyRef.current = true;
         // Compara timestamps: só atualiza local se o remoto for mais recente
         const localUpdatedAt = state._updatedAt || 0;
         const remoteUpdatedAt = remoteData._updatedAt?.toMillis?.() || 0;
@@ -122,7 +127,7 @@ export function useSync(state, setState, setSyncStatus, userId) {
 
   useEffect(() => {
     // Se a atualização veio do remoto, não reenvia ao Firestore
-    if (isRemoteUpdateRef.current) {
+    if (!remoteReadyRef.current || isRemoteUpdateRef.current) {
       isRemoteUpdateRef.current = false;
       return;
     }
