@@ -7,33 +7,20 @@
 //   4. O Firestore SDK já tem IndexedDB como cache offline, então o onSnapshot funciona mesmo sem internet
 //
 // Estrutura no Firestore:
-//   /users/{deviceId}/data  →  { items, history, pantry, budget, date, market, note, updatedAt }
-//
-// "deviceId" é um UUID fixo gerado no localStorage. Não usa autenticação —
-// qualquer dispositivo que tenha o mesmo deviceId compartilha os dados.
+//   /users/{uid} → { items, history, pantry, budget, date, market, note, _updatedAt }
 
 import { useEffect, useRef, useCallback } from 'react';
 import { doc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase.js';
 
 const LOCAL_KEY = 'nalista-v1';
-const DEVICE_KEY = 'nalista-device-id';
 const DEBOUNCE_MS = 1200; // tempo de espera antes de salvar no Firestore
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function getDeviceId() {
-  let id = localStorage.getItem(DEVICE_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(DEVICE_KEY, id);
-  }
-  return id;
-}
-
-function saveLocal(state) {
+function saveLocal(state, userId) {
   try {
-    localStorage.setItem(LOCAL_KEY, JSON.stringify(state));
+    localStorage.setItem(userId ? `${LOCAL_KEY}-${userId}` : LOCAL_KEY, JSON.stringify(state));
   } catch {
     console.warn('Não foi possível salvar no localStorage.');
   }
@@ -48,22 +35,21 @@ function saveLocal(state) {
  * @param {function} setState — setter do estado
  * @param {function} setSyncStatus — ('idle' | 'saving' | 'saved' | 'offline' | 'error')
  */
-export function useSync(state, setState, setSyncStatus) {
+export function useSync(state, setState, setSyncStatus, userId) {
   const debounceRef = useRef(null);
   const isRemoteUpdateRef = useRef(false); // evita loop: remoto → local → remoto
-  const deviceId = useRef(getDeviceId());
   const firestoreDocRef = useRef(
-    isFirebaseConfigured && db ? doc(db, 'users', deviceId.current) : null
+    isFirebaseConfigured && db && userId ? doc(db, 'users', userId) : null
   );
 
   // ── 1. Salvar no localStorage sempre que o estado mudar ──────────────────
   useEffect(() => {
-    saveLocal(state);
-  }, [state]);
+    saveLocal(state, userId);
+  }, [state, userId]);
 
   // ── 2. Assinar onSnapshot para receber atualizações remotas ──────────────
   useEffect(() => {
-    if (!isFirebaseConfigured || !firestoreDocRef.current) {
+    if (!isFirebaseConfigured || !firestoreDocRef.current || !userId) {
       setSyncStatus('offline');
       return;
     }
@@ -106,7 +92,7 @@ export function useSync(state, setState, setSyncStatus) {
     );
 
     return () => unsub();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── 3. Debounce: salvar no Firestore quando o estado mudar ───────────────
   const saveToFirestore = useCallback(
@@ -151,5 +137,5 @@ export function useSync(state, setState, setSyncStatus) {
     };
   }, [state]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { deviceId: deviceId.current };
+  return { userId };
 }

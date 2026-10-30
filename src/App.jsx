@@ -26,7 +26,7 @@ function PageHeader({ page, onMarket }) {
 
 export default function App() {
   const auth = useAuth();
-  const app = useAppState();
+  const app = useAppState(auth.user?.uid);
 
   if (auth.loading) {
     return <div className="auth-loading"><div className="auth-loading-mark"><LuShoppingCart size={23} /></div><span>Carregando sua conta...</span></div>;

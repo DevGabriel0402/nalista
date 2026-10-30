@@ -21,17 +21,17 @@ export const createInitialState = () => ({
 
 const itemKey = (item) => `${item.name.trim().toLocaleLowerCase()}|${item.unit}`;
 
-function loadSavedState() {
+function loadSavedState(userId) {
   try {
-    const saved = JSON.parse(localStorage.getItem("nalista-v1"));
+    const saved = JSON.parse(localStorage.getItem(userId ? `nalista-v1-${userId}` : "nalista-v1"));
     return saved ? { ...createInitialState(), ...saved } : createInitialState();
   } catch {
     return createInitialState();
   }
 }
 
-export default function useAppState() {
-  const [state, setState] = useState(loadSavedState);
+export default function useAppState(userId) {
+  const [state, setState] = useState(() => loadSavedState(userId));
   const [page, setPage] = useState("lista");
   const [darkMode, setDarkMode] = useState(
     () => localStorage.getItem("nalista-dark") === "true",
@@ -42,7 +42,11 @@ export default function useAppState() {
   const [syncStatus, setSyncStatus] = useState("idle");
   const [toastMessage, setToastMessage] = useState("");
   const toastTimeoutRef = useRef(null);
-  const { deviceId } = useSync(state, setState, setSyncStatus);
+  const { userId: syncedUserId } = useSync(state, setState, setSyncStatus, userId);
+
+  useEffect(() => {
+    setState(loadSavedState(userId));
+  }, [userId]);
 
   const [dialogState, setDialogState] = useState(null);
   const [dialogInput, setDialogInput] = useState("");
