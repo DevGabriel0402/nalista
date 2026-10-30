@@ -435,6 +435,34 @@ button:active {
   transform: scale(0.98);
 }
 
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.error-page {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  padding: 32px;
+  color: var(--color-text-main);
+  text-align: center;
+}
+
+.error-page > svg {
+  color: var(--color-warning);
+}
+
+.error-page p {
+  max-width: 520px;
+  color: var(--color-text-muted);
+}
+
 button.primary {
   background: #0f172a;
   color: #ffffff;

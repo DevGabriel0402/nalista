@@ -8,6 +8,7 @@ import AuthPage from './components/AuthPage.jsx';
 import { CATEGORIES, detectCategory, formatCurrency, maskCurrency } from './utils.js';
 import useAppState from './hooks/useAppState.js';
 import useAuth from './hooks/useAuth.js';
+import useWakeLock from './hooks/useWakeLock.js';
 import './style.css';
 
 function PageHeader({ page, onMarket }) {
@@ -27,6 +28,7 @@ function PageHeader({ page, onMarket }) {
 export default function App() {
   const auth = useAuth();
   const app = useAppState(auth.user?.uid);
+  useWakeLock(app.marketMode && app.page === 'lista');
 
   if (auth.loading) {
     return <div className="auth-loading"><div className="auth-loading-mark"><LuShoppingCart size={23} /></div><span>Carregando sua conta...</span></div>;
@@ -63,7 +65,6 @@ export default function App() {
     setItemCategory: app.setItemCategory,
     setItemPriceDisplay: app.setItemPriceDisplay
   };
-
   return <>
     <MobileIsland total={formatCurrency(app.total)} hasPendingPrices={app.pendingPricesCount > 0} onScan={() => app.openScanner('label')} />
     <DesktopSidebar page={app.page} darkMode={app.darkMode} syncStatus={app.syncStatus} expiringPantryCount={app.expiringPantryCount} onSelect={app.setPage} onToggleTheme={() => app.setDarkMode((value) => !value)} onSignOut={auth.signOut} />
@@ -100,6 +101,6 @@ export default function App() {
       data={{ open: app.isScannerOpen, mode: app.scannerMode, fileRef: app.fileInputRef, status: app.scanStatus, text: app.ocrText, showReview: app.showOcrReview, setText: app.setOcrText }}
       actions={{ close: () => app.setIsScannerOpen(false), capture: app.handlePhotoCapture, useOcr: app.handleUseOcr }}
     />
-    {app.toastMessage && <div className="toast">{app.toastMessage}</div>}
+    {app.toastMessage && <div className="toast" role="status" aria-live="polite">{app.toastMessage}</div>}
   </>;
 }

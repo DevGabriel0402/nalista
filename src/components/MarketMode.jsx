@@ -32,7 +32,20 @@ export default function MarketMode({ state, total, checkedCount, pendingPricesCo
             <div key={catKey} className={`market-category-section ${allChecked ? 'all-checked' : ''}`}>
               <div className="market-category-header"><span className="market-cat-icon">{catInfo.icon}</span><span className="market-cat-label">{catInfo.label}</span><span className="market-cat-count">{items.filter((item) => item.checked).length}/{items.length}</span></div>
               {items.map((item) => (
-                <div key={item.id} className={`market-item-row ${item.checked ? 'market-item-checked' : ''}`} onClick={() => onToggleItem(item.id)}>
+              <div
+                key={item.id}
+                className={`market-item-row ${item.checked ? 'market-item-checked' : ''}`}
+                role="button"
+                tabIndex={0}
+                onClick={() => onToggleItem(item.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onToggleItem(item.id);
+                  }
+                }}
+                aria-pressed={item.checked}
+              >
                   <div className={`market-item-circle ${item.checked ? 'checked' : ''}`}>{item.checked && <LuCheck size={18} strokeWidth={2.5} />}</div>
                   <div className="market-item-info"><span className="market-item-name">{item.name}</span><span className="market-item-detail">{item.qty} {item.unit}{item.price > 0 && ` · ${formatCurrency(item.price)}/${item.unit}`}</span></div>
                   <div className={`market-item-price ${item.pricePending ? 'pending' : ''}`}>{item.pricePending ? '—' : formatCurrency(item.qty * item.price)}</div>

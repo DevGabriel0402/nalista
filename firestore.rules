@@ -1,8 +1,40 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function hasValidShape() {
+      return request.resource.data.keys().hasOnly([
+        'items',
+        'history',
+        'pantry',
+        'budget',
+        'date',
+        'market',
+        'note',
+        '_updatedAt'
+      ])
+      && request.resource.data.items is list
+      && request.resource.data.items.size() <= 1000
+      && request.resource.data.history is list
+      && request.resource.data.history.size() <= 500
+      && request.resource.data.pantry is list
+      && request.resource.data.pantry.size() <= 1000
+      && request.resource.data.budget is number
+      && request.resource.data.budget >= 0
+      && request.resource.data.date is string
+      && request.resource.data.date.size() <= 20
+      && request.resource.data.market is string
+      && request.resource.data.market.size() <= 200
+      && request.resource.data._updatedAt is timestamp;
+    }
+
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && hasValidShape();
+      allow delete: if isOwner(userId);
     }
   }
 }
