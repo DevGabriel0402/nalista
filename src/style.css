@@ -796,6 +796,12 @@ body.dark-mode .badge {
   font-size: 12px;
 }
 
+.list-search {
+  max-width: 180px;
+  padding: 6px 9px;
+  font-size: 12px;
+}
+
 @media (max-width: 520px) {
   .list-toolbar {
     flex-wrap: wrap;
@@ -804,6 +810,11 @@ body.dark-mode .badge {
 
   .list-toolbar select {
     flex: 1;
+  }
+
+  .list-search {
+    max-width: none;
+    flex-basis: 100%;
   }
 }
 

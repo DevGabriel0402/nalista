@@ -21,6 +21,8 @@ export default function ShoppingList({
   groupedItems,
   groupByCategory,
   itemSort,
+  itemSearch,
+  itemFilter,
   refs,
   handlers,
 }) {
@@ -40,6 +42,8 @@ export default function ShoppingList({
     setState,
     setGroupByCategory,
     setItemSort,
+    setItemSearch,
+    setItemFilter,
   } = handlers;
   const {
     itemName,
@@ -163,6 +167,13 @@ export default function ShoppingList({
         </form>
         {state.items.length > 0 && (
           <div className="list-toolbar">
+            <input className="list-search" type="search" value={itemSearch} onChange={(event) => setItemSearch(event.target.value)} placeholder="Buscar item..." aria-label="Buscar item" />
+            <select aria-label="Filtrar itens" value={itemFilter} onChange={(event) => setItemFilter(event.target.value)}>
+              <option value="all">Todos</option>
+              <option value="unchecked">Pendentes</option>
+              <option value="checked">Marcados</option>
+              <option value="pending-price">Sem preço</option>
+            </select>
             <label htmlFor="item-sort">Ordenar:</label>
             <select id="item-sort" value={itemSort} onChange={(event) => setItemSort(event.target.value)}>
               <option value="added">Adição</option>

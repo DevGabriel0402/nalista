@@ -51,6 +51,8 @@ export default function App() {
     setState: app.setState,
     setGroupByCategory: app.setGroupByCategory,
     setItemSort: app.setItemSort,
+    setItemSearch: app.setItemSearch,
+    setItemFilter: app.setItemFilter,
     itemName: app.itemName,
     itemQty: app.itemQty,
     itemUnit: app.itemUnit,
@@ -68,7 +70,7 @@ export default function App() {
     <main>
       {app.marketMode && app.page === 'lista' ? (
         <MarketMode state={app.state} total={formatCurrency(app.total)} checkedCount={app.checkedCount} pendingPricesCount={app.pendingPricesCount} budgetPercent={app.budgetPercent} budgetColor={app.budgetColor} groupedItems={app.marketGroupedItems} onToggleItem={app.handleToggleItem} onExit={() => app.setMarketMode(false)} onFinish={app.handleFinishPurchase} />
-      ) : <><PageHeader page={app.page} onMarket={app.setMarketMode} />{app.page === 'lista' ? <ShoppingList state={app.state} total={app.total} budgetPercent={app.budgetPercent} budgetColor={app.budgetColor} pendingPricesCount={app.pendingPricesCount} checkedCount={app.checkedCount} groupedItems={app.groupedItems} groupByCategory={app.groupByCategory} itemSort={app.itemSort} refs={{ restoreInputRef: app.restoreInputRef }} handlers={shoppingHandlers} /> : <DataPages page={app.page} state={app.state} priceChanges={app.priceChanges} maxDelta={app.maxDelta} expiringPantryCount={app.expiringPantryCount} handlers={{ handleConsumePantry: app.handleConsumePantry, handleRestockPantry: app.handleRestockPantry, handleUpdatePantryExpiry: app.handleUpdatePantryExpiry }} />}</>}
+      ) : <><PageHeader page={app.page} onMarket={app.setMarketMode} />{app.page === 'lista' ? <ShoppingList state={app.state} total={app.total} budgetPercent={app.budgetPercent} budgetColor={app.budgetColor} pendingPricesCount={app.pendingPricesCount} checkedCount={app.checkedCount} groupedItems={app.groupedItems} groupByCategory={app.groupByCategory} itemSort={app.itemSort} itemSearch={app.itemSearch} itemFilter={app.itemFilter} refs={{ restoreInputRef: app.restoreInputRef }} handlers={shoppingHandlers} /> : <DataPages page={app.page} state={app.state} priceChanges={app.priceChanges} maxDelta={app.maxDelta} expiringPantryCount={app.expiringPantryCount} handlers={{ handleConsumePantry: app.handleConsumePantry, handleRestockPantry: app.handleRestockPantry, handleUpdatePantryExpiry: app.handleUpdatePantryExpiry }} />}</>}
     </main>
     <MobileNavigation page={app.page} marketMode={app.marketMode} expiringPantryCount={app.expiringPantryCount} onSelect={app.setPage} onMarket={app.setMarketMode} />
     <EditItemModal

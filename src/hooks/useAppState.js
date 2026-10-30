@@ -39,6 +39,8 @@ export default function useAppState(userId) {
   const [marketMode, setMarketMode] = useState(false);
   const [groupByCategory, setGroupByCategory] = useState(true);
   const [itemSort, setItemSort] = useState("added");
+  const [itemSearch, setItemSearch] = useState("");
+  const [itemFilter, setItemFilter] = useState("all");
   const [syncStatus, setSyncStatus] = useState("idle");
   const [toastMessage, setToastMessage] = useState("");
   const toastTimeoutRef = useRef(null);
@@ -172,6 +174,17 @@ export default function useAppState(userId) {
     }),
     [itemSort],
   );
+  const filteredItems = useMemo(() => {
+    const query = itemSearch.trim().toLocaleLowerCase();
+    return state.items.filter((item) => {
+      const matchesSearch = !query || item.name.toLocaleLowerCase().includes(query);
+      const matchesFilter = itemFilter === "all"
+        || (itemFilter === "checked" && item.checked)
+        || (itemFilter === "unchecked" && !item.checked)
+        || (itemFilter === "pending-price" && item.pricePending);
+      return matchesSearch && matchesFilter;
+    });
+  }, [itemFilter, itemSearch, state.items]);
   const groupItems = useCallback(
     (items) =>
       sortItems(items).reduce((groups, item) => {
@@ -183,8 +196,8 @@ export default function useAppState(userId) {
     [sortItems],
   );
   const groupedItems = useMemo(
-    () => (groupByCategory ? groupItems(state.items) : { all: sortItems(state.items) }),
-    [groupByCategory, groupItems, sortItems, state.items],
+    () => (groupByCategory ? groupItems(filteredItems) : { all: sortItems(filteredItems) }),
+    [filteredItems, groupByCategory, groupItems, sortItems],
   );
   const marketGroupedItems = useMemo(
     () => groupItems(state.items),
@@ -536,8 +549,8 @@ export default function useAppState(userId) {
     try {
       setScanStatus("Processando imagem…");
       if (scannerMode === "label") {
-        if (!window.Tesseract) throw new Error("Leitor OCR indisponível.");
-        const result = await window.Tesseract.recognize(file, "por");
+        const { recognize } = await import("tesseract.js");
+        const result = await recognize(file, "por");
         setOcrText(result.data.text);
         setShowOcrReview(true);
         setScanStatus("Leitura concluída!");
@@ -550,7 +563,8 @@ export default function useAppState(userId) {
         const context = canvas.getContext("2d");
         context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
         bitmap.close();
-        const result = window.jsQR?.(
+        const { default: jsQR } = await import("jsqr");
+        const result = jsQR(
           context.getImageData(0, 0, canvas.width, canvas.height).data,
           canvas.width,
           canvas.height,
@@ -635,6 +649,10 @@ export default function useAppState(userId) {
     setGroupByCategory,
     itemSort,
     setItemSort,
+    itemSearch,
+    setItemSearch,
+    itemFilter,
+    setItemFilter,
     syncStatus,
     toastMessage,
     total,

@@ -376,8 +376,34 @@ O [`firebase.json`](./firebase.json) já aponta o Hosting para `dist/` e configu
 O código de sincronização utiliza um documento por identificador de dispositivo:
 
 ```text
-/users/{deviceId}
+/users/{uid}
 ```
+
+### Migração para um usuário autenticado
+
+O script [`scripts/migrate-firestore.mjs`](./scripts/migrate-firestore.mjs) consolida os documentos antigos no UID:
+
+```text
+OGlKVAiYT4XYEXlS5zQOetTHLaF2
+```
+
+Pré-requisitos:
+
+1. Instale as dependências com `npm install`.
+2. Configure `GOOGLE_APPLICATION_CREDENTIALS` apontando para uma credencial de serviço do Firebase Admin SDK.
+3. Execute primeiro sem apagar as fontes:
+
+```bash
+npm run migrate:firestore
+```
+
+O script preserva os documentos de origem por padrão. Depois de validar os dados no aplicativo, a remoção pode ser solicitada explicitamente:
+
+```bash
+npm run migrate:firestore -- --delete-sources
+```
+
+Nunca compartilhe a chave da conta de serviço nem a inclua no Git.
 
 O documento contém o estado da aplicação e o campo interno `_updatedAt`, usado para comparar atualizações locais e remotas.
 

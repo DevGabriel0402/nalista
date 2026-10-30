@@ -9,7 +9,7 @@
 // Estrutura no Firestore:
 //   /users/{uid} → { items, history, pantry, budget, date, market, note, _updatedAt }
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useCallback } from 'react';
 import { doc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase.js';
 
@@ -38,8 +38,9 @@ function saveLocal(state, userId) {
 export function useSync(state, setState, setSyncStatus, userId) {
   const debounceRef = useRef(null);
   const isRemoteUpdateRef = useRef(false); // evita loop: remoto → local → remoto
-  const firestoreDocRef = useRef(
-    isFirebaseConfigured && db && userId ? doc(db, 'users', userId) : null
+  const firestoreDocRef = useMemo(
+    () => isFirebaseConfigured && db && userId ? doc(db, 'users', userId) : null,
+    [userId]
   );
 
   // ── 1. Salvar no localStorage sempre que o estado mudar ──────────────────
@@ -49,13 +50,13 @@ export function useSync(state, setState, setSyncStatus, userId) {
 
   // ── 2. Assinar onSnapshot para receber atualizações remotas ──────────────
   useEffect(() => {
-    if (!isFirebaseConfigured || !firestoreDocRef.current || !userId) {
+    if (!isFirebaseConfigured || !firestoreDocRef || !userId) {
       setSyncStatus('offline');
       return;
     }
 
     const unsub = onSnapshot(
-      firestoreDocRef.current,
+      firestoreDocRef,
       { includeMetadataChanges: true },
       (snap) => {
         if (!snap.exists()) {
@@ -92,18 +93,18 @@ export function useSync(state, setState, setSyncStatus, userId) {
     );
 
     return () => unsub();
-  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [firestoreDocRef, setState, setSyncStatus, state._updatedAt, userId]);
 
   // ── 3. Debounce: salvar no Firestore quando o estado mudar ───────────────
   const saveToFirestore = useCallback(
     async (data) => {
-      if (!isFirebaseConfigured || !firestoreDocRef.current) return;
+      if (!isFirebaseConfigured || !firestoreDocRef) return;
 
       setSyncStatus('saving');
       try {
         const { _updatedAt, ...cleanState } = data;
         await setDoc(
-          firestoreDocRef.current,
+          firestoreDocRef,
           {
             ...cleanState,
             _updatedAt: serverTimestamp()
@@ -116,7 +117,7 @@ export function useSync(state, setState, setSyncStatus, userId) {
         setSyncStatus('error');
       }
     },
-    [setSyncStatus]
+    [firestoreDocRef, setSyncStatus]
   );
 
   useEffect(() => {
@@ -135,7 +136,7 @@ export function useSync(state, setState, setSyncStatus, userId) {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [state]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [saveToFirestore, state, setSyncStatus]);
 
   return { userId };
 }

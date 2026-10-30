@@ -33,3 +33,7 @@ dist-ssr
 # Firebase cache
 .firebase
 .firebaserc
+
+# Firebase Admin credentials
+service-account*.json
+firebase-service-account*.json
