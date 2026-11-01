@@ -181,18 +181,18 @@ export function RouteOrderModal({ open, categoryOrder, onMove, onReset, onClose 
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content route-modal" onClick={stopPropagation}>
+      <div className="modal-content route-modal" role="dialog" aria-modal="true" aria-labelledby="route-dialog-title" onClick={stopPropagation}>
         <div className="modal-header">
-          <h2>
+          <h2 id="route-dialog-title">
             <LuRoute size={18} style={{ marginRight: 8, color: '#3b82f6' }} />
-            Ordem dos Corredores (Rota)
+            Organizar rota
           </h2>
-          <button className="modal-close" type="button" onClick={onClose}>
+          <button className="modal-close" type="button" aria-label="Fechar organização da rota" onClick={onClose}>
             <LuX size={16} />
           </button>
         </div>
         <p style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 16 }}>
-          Defina a sequência em que você percorre o supermercado. Os grupos da lista e do Modo Mercado seguirão esta rota:
+          Use as setas para ordenar os corredores. A ordem é aplicada à lista e ao Modo Mercado automaticamente.
         </p>
         <div className="route-list">
           {categoryOrder.map((catKey, index) => {
@@ -234,7 +234,7 @@ export function RouteOrderModal({ open, categoryOrder, onMove, onReset, onClose 
             <LuRotateCcw size={13} /> Ordem padrão
           </button>
           <button type="button" className="primary" onClick={onClose}>
-            <LuCheck size={14} /> Concluído
+            <LuCheck size={14} /> Usar esta rota
           </button>
         </div>
       </div>

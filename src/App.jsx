@@ -1,3 +1,7 @@
+import { useEffect, useState } from 'react';
+import useAppRoute from './hooks/useAppRoute.js';
+import { getAccessRedirect } from './routes.js';
+import SplashScreen from './components/SplashScreen.jsx';
 import { Toaster } from 'react-hot-toast';
 import { LuShoppingCart } from 'react-icons/lu';
 import MarketMode from './components/MarketMode.jsx';
@@ -11,6 +15,8 @@ import useAppState from './hooks/useAppState.jsx';
 import useAuth from './hooks/useAuth.js';
 import useWakeLock from './hooks/useWakeLock.js';
 import './style.css';
+import './glass.css';
+import './splash.css';
 
 function PageHeader({ page, onMarket }) {
   const titles = {
@@ -28,16 +34,21 @@ function PageHeader({ page, onMarket }) {
 
 export default function App() {
   const auth = useAuth();
+  const route = useAppRoute();
+  const [splashReady, setSplashReady] = useState(false);
+  useEffect(() => { const timer = window.setTimeout(() => setSplashReady(true), 850); return () => window.clearTimeout(timer); }, []);
+  useEffect(() => {
+    if (auth.loading) return;
+    const redirect = getAccessRedirect(route, Boolean(auth.user));
+    if (redirect) route.navigate(redirect, { replace: true });
+  }, [auth.loading, auth.user, route.path, route.search, route.navigate]);
   const app = useAppState(auth.user?.uid);
   useWakeLock(app.marketMode && app.page === 'lista');
 
-  if (auth.loading) {
-    return <div className="auth-loading"><div className="auth-loading-mark"><LuShoppingCart size={23} /></div><span>Carregando sua conta...</span></div>;
-  }
-
-  if (!auth.user) {
-    return <AuthPage auth={auth} />;
-  }
+  if (!splashReady || auth.loading) return <SplashScreen checkingAccount={auth.loading} />;
+  if (!auth.user) return <AuthPage auth={auth} />;
+  if (getAccessRedirect(route, true)) return <SplashScreen />;
+  if (!route.page) return <div className="panel route-not-found"><span className="eyebrow">404</span><h1>Página não encontrada</h1><p>Este endereço não faz parte da sua lista.</p><button type="button" className="primary" onClick={() => route.navigate('/lista', { replace: true })}>Voltar à lista</button></div>;
 
   const shoppingHandlers = {
     handleAddItem: app.handleAddItem,
@@ -97,6 +108,7 @@ export default function App() {
           budgetColor={app.budgetColor}
           groupedItems={app.marketGroupedItems}
           onToggleItem={app.handleToggleItem}
+          onSetPrice={app.handleSetItemPrice}
           onExit={() => app.setMarketMode(false)}
           onFinish={app.handleFinishPurchase}
           onOpenRoute={() => app.setIsRouteModalOpen(true)}

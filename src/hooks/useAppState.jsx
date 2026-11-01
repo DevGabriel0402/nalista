@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import { useSync } from "../useSync.js";
 import useDialogs from "./useDialogs.js";
 import useListView from "./useListView.js";
+import useAppRoute from "./useAppRoute.js";
 import {
   CATEGORIES,
   DEFAULT_CATEGORY_ORDER,
@@ -48,11 +49,10 @@ function loadSavedState(userId) {
 
 export default function useAppState(userId) {
   const [state, setState] = useState(() => loadSavedState(userId));
-  const [page, setPage] = useState("lista");
+  const { page, setPage, marketMode, setMarketMode } = useAppRoute();
   const [darkMode, setDarkMode] = useState(
     () => localStorage.getItem("nalista-dark") === "true",
   );
-  const [marketMode, setMarketMode] = useState(false);
   const [groupByCategory, setGroupByCategory] = useState(true);
   const [itemSort, setItemSort] = useState("added");
   const [itemSearch, setItemSearch] = useState("");
