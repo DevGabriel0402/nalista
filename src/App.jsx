@@ -1,12 +1,13 @@
+import { Toaster } from 'react-hot-toast';
 import { LuShoppingCart } from 'react-icons/lu';
 import MarketMode from './components/MarketMode.jsx';
 import ShoppingList from './components/ShoppingList.jsx';
 import DataPages from './components/DataPages.jsx';
 import { DesktopSidebar, MobileIsland, MobileNavigation, TopBar } from './components/Navigation.jsx';
-import { DialogModal, EditItemModal, ReceiptModal, ScannerModal } from './components/Modals.jsx';
+import { DialogModal, EditItemModal, ReceiptModal, RouteOrderModal, ScannerModal } from './components/Modals.jsx';
 import AuthPage from './components/AuthPage.jsx';
 import { CATEGORIES, detectCategory, formatCurrency, maskCurrency } from './utils.js';
-import useAppState from './hooks/useAppState.js';
+import useAppState from './hooks/useAppState.jsx';
 import useAuth from './hooks/useAuth.js';
 import useWakeLock from './hooks/useWakeLock.js';
 import './style.css';
@@ -37,6 +38,7 @@ export default function App() {
   if (!auth.user) {
     return <AuthPage auth={auth} />;
   }
+
   const shoppingHandlers = {
     handleAddItem: app.handleAddItem,
     handleNameChange: app.handleNameChange,
@@ -48,6 +50,8 @@ export default function App() {
     handleSetBudget: app.handleSetBudget,
     handleBackup: app.handleBackup,
     handleRestore: app.handleRestore,
+    handleShareWhatsApp: app.handleShareWhatsApp,
+    setIsRouteModalOpen: app.setIsRouteModalOpen,
     openScanner: app.openScanner,
     openReceipt: () => { app.setReceiptTotalDisplay(app.state.note?.total ? maskCurrency(Math.round(app.state.note.total * 100)) : ''); app.setReceiptTaxDisplay(app.state.note?.tax ? maskCurrency(Math.round(app.state.note.tax * 100)) : ''); app.setReconciliation(null); app.setIsReceiptOpen(true); },
     setState: app.setState,
@@ -65,18 +69,87 @@ export default function App() {
     setItemCategory: app.setItemCategory,
     setItemPriceDisplay: app.setItemPriceDisplay
   };
+
   return <>
+    <Toaster
+      position="top-right"
+      toastOptions={{
+        style: {
+          background: app.darkMode ? '#1e293b' : '#ffffff',
+          color: app.darkMode ? '#f1f5f9' : '#0f172a',
+          border: app.darkMode ? '1px solid #334155' : '1px solid #e2e8f0',
+          borderRadius: '12px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+          fontSize: '13.5px',
+        },
+      }}
+    />
     <TopBar darkMode={app.darkMode} syncStatus={app.syncStatus} onToggleTheme={() => app.setDarkMode((value) => !value)} onSignOut={auth.signOut} onScan={() => app.openScanner('label')} />
     <DesktopSidebar page={app.page} darkMode={app.darkMode} syncStatus={app.syncStatus} expiringPantryCount={app.expiringPantryCount} onSelect={app.setPage} onToggleTheme={() => app.setDarkMode((value) => !value)} onSignOut={auth.signOut} />
     <main>
       {app.marketMode && app.page === 'lista' ? (
-        <MarketMode state={app.state} total={formatCurrency(app.total)} checkedCount={app.checkedCount} pendingPricesCount={app.pendingPricesCount} budgetPercent={app.budgetPercent} budgetColor={app.budgetColor} groupedItems={app.marketGroupedItems} onToggleItem={app.handleToggleItem} onExit={() => app.setMarketMode(false)} onFinish={app.handleFinishPurchase} />
-      ) : <><PageHeader page={app.page} onMarket={app.setMarketMode} />{app.page === 'lista' ? <ShoppingList state={app.state} total={app.total} budgetPercent={app.budgetPercent} budgetColor={app.budgetColor} pendingPricesCount={app.pendingPricesCount} checkedCount={app.checkedCount} groupedItems={app.groupedItems} groupByCategory={app.groupByCategory} itemSort={app.itemSort} itemSearch={app.itemSearch} itemFilter={app.itemFilter} refs={{ restoreInputRef: app.restoreInputRef }} handlers={shoppingHandlers} /> : <DataPages page={app.page} state={app.state} priceChanges={app.priceChanges} maxDelta={app.maxDelta} expiringPantryCount={app.expiringPantryCount} handlers={{ handleConsumePantry: app.handleConsumePantry, handleRestockPantry: app.handleRestockPantry, handleUpdatePantryExpiry: app.handleUpdatePantryExpiry, handleClearPantry: app.handleClearPantry, handleDeleteHistoryItem: app.handleDeleteHistoryItem }} />}</>}
+        <MarketMode
+          state={app.state}
+          total={formatCurrency(app.total)}
+          checkedCount={app.checkedCount}
+          pendingPricesCount={app.pendingPricesCount}
+          budgetPercent={app.budgetPercent}
+          budgetColor={app.budgetColor}
+          groupedItems={app.marketGroupedItems}
+          onToggleItem={app.handleToggleItem}
+          onExit={() => app.setMarketMode(false)}
+          onFinish={app.handleFinishPurchase}
+          onOpenRoute={() => app.setIsRouteModalOpen(true)}
+        />
+      ) : (
+        <>
+          <PageHeader page={app.page} onMarket={app.setMarketMode} />
+          {app.page === 'lista' ? (
+            <ShoppingList
+              state={app.state}
+              total={app.total}
+              budgetPercent={app.budgetPercent}
+              budgetColor={app.budgetColor}
+              pendingPricesCount={app.pendingPricesCount}
+              checkedCount={app.checkedCount}
+              groupedItems={app.groupedItems}
+              groupByCategory={app.groupByCategory}
+              itemSort={app.itemSort}
+              itemSearch={app.itemSearch}
+              itemFilter={app.itemFilter}
+              refs={{ restoreInputRef: app.restoreInputRef }}
+              handlers={shoppingHandlers}
+            />
+          ) : (
+            <DataPages
+              page={app.page}
+              state={app.state}
+              priceChanges={app.priceChanges}
+              maxDelta={app.maxDelta}
+              expiringPantryCount={app.expiringPantryCount}
+              handlers={{
+                handleConsumePantry: app.handleConsumePantry,
+                handleRestockPantry: app.handleRestockPantry,
+                handleUpdatePantryExpiry: app.handleUpdatePantryExpiry,
+                handleClearPantry: app.handleClearPantry,
+                handleDeleteHistoryItem: app.handleDeleteHistoryItem,
+              }}
+            />
+          )}
+        </>
+      )}
     </main>
     <MobileNavigation page={app.page} marketMode={app.marketMode} expiringPantryCount={app.expiringPantryCount} onSelect={app.setPage} onMarket={app.setMarketMode} />
     <EditItemModal
       data={{ item: app.editItem, name: app.editName, qty: app.editQty, unit: app.editUnit, category: app.editCategory, price: app.editPriceDisplay, categories: Object.values(CATEGORIES), setName: app.setEditName, setQty: app.setEditQty, setUnit: app.setEditUnit, setCategory: app.setEditCategory, setPrice: app.setEditPriceDisplay, detectCategory, maskCurrency }}
       actions={{ setItem: app.setEditItem, save: app.handleSaveEdit }}
+    />
+    <RouteOrderModal
+      open={app.isRouteModalOpen}
+      categoryOrder={app.categoryOrder}
+      onMove={app.handleMoveCategoryOrder}
+      onReset={app.handleResetCategoryOrder}
+      onClose={() => app.setIsRouteModalOpen(false)}
     />
     <DialogModal dialog={app.dialogState} input={app.dialogInput} setInput={app.setDialogInput} />
     <ReceiptModal
@@ -101,6 +174,5 @@ export default function App() {
       data={{ open: app.isScannerOpen, mode: app.scannerMode, fileRef: app.fileInputRef, status: app.scanStatus, text: app.ocrText, showReview: app.showOcrReview, setText: app.setOcrText }}
       actions={{ close: () => app.setIsScannerOpen(false), capture: app.handlePhotoCapture, useOcr: app.handleUseOcr }}
     />
-    {app.toastMessage && <div className="toast" role="status" aria-live="polite">{app.toastMessage}</div>}
   </>;
 }

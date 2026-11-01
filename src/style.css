@@ -887,6 +887,55 @@ body.dark-mode .badge {
   justify-content: flex-end;
   gap: 8px;
   margin: 14px 0 6px;
+  flex-wrap: wrap;
+}
+
+.toolbar-btn {
+  font-size: 11.5px;
+  padding: 6px 11px;
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-main);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toolbar-btn:hover {
+  background: #f1f5f9;
+  border-color: var(--color-border-hover);
+}
+
+body.dark-mode .toolbar-btn:hover {
+  background: #1e293b;
+}
+
+.route-config-btn {
+  color: #2563eb;
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+body.dark-mode .route-config-btn {
+  color: #38bdf8;
+  border-color: #0369a1;
+  background: #0c2340;
+}
+
+.whatsapp-share-btn {
+  color: #16a34a;
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+body.dark-mode .whatsapp-share-btn {
+  color: #4ade80;
+  border-color: #166534;
+  background: #052e16;
 }
 
 .list-toolbar label {
@@ -2073,6 +2122,82 @@ body.dark-mode .dialog-modal-keyword-hint strong {
 .dialog-modal-buttons button {
   min-width: 90px;
   padding: 10px 18px;
+}
+
+/* ─── Route Order Modal ──────────────────────────────────────────────────── */
+.route-modal {
+  width: 480px;
+}
+
+.route-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 50vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.route-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.route-item:hover {
+  border-color: var(--color-border-hover);
+}
+
+.route-index {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  width: 20px;
+}
+
+.route-icon {
+  font-size: 18px;
+}
+
+.route-label {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-text-main);
+}
+
+.route-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.route-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  background: var(--color-panel);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-main);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.route-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.route-btn:not(:disabled):hover {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
 }
 
 /* Toast */

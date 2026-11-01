@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import { useSync } from "../useSync.js";
 import useDialogs from "./useDialogs.js";
 import useListView from "./useListView.js";
 import {
   CATEGORIES,
+  DEFAULT_CATEGORY_ORDER,
   detectCategory,
   formatCurrency,
   maskCurrency,
@@ -19,6 +21,7 @@ export const createInitialState = () => ({
   date: new Date().toLocaleDateString("en-CA"),
   market: "",
   note: null,
+  categoryOrder: [...DEFAULT_CATEGORY_ORDER],
 });
 
 const itemKey = (item) => `${item.name.trim().toLocaleLowerCase()}|${item.unit}`;
@@ -29,7 +32,15 @@ function loadSavedState(userId) {
     const stored = localStorage.getItem(userKey);
     const legacy = userId && !stored ? localStorage.getItem("nalista-v1") : null;
     const saved = JSON.parse(stored || legacy);
-    return saved ? { ...createInitialState(), ...saved } : createInitialState();
+    return saved
+      ? {
+        ...createInitialState(),
+        ...saved,
+        categoryOrder: saved.categoryOrder && Array.isArray(saved.categoryOrder)
+          ? saved.categoryOrder
+          : [...DEFAULT_CATEGORY_ORDER],
+      }
+      : createInitialState();
   } catch {
     return createInitialState();
   }
@@ -47,8 +58,7 @@ export default function useAppState(userId) {
   const [itemSearch, setItemSearch] = useState("");
   const [itemFilter, setItemFilter] = useState("all");
   const [syncStatus, setSyncStatus] = useState("idle");
-  const [toastMessage, setToastMessage] = useState("");
-  const toastTimeoutRef = useRef(null);
+  const [isRouteModalOpen, setIsRouteModalOpen] = useState(false);
   const { userId: syncedUserId } = useSync(state, setState, setSyncStatus, userId);
 
   useEffect(() => {
@@ -81,10 +91,14 @@ export default function useAppState(userId) {
   const fileInputRef = useRef(null);
   const restoreInputRef = useRef(null);
 
-  const showToast = useCallback((message) => {
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    setToastMessage(message);
-    toastTimeoutRef.current = setTimeout(() => setToastMessage(""), 4000);
+  const showToast = useCallback((message, options = {}) => {
+    if (options.type === "error") {
+      toast.error(message);
+    } else if (options.type === "success") {
+      toast.success(message);
+    } else {
+      toast(message);
+    }
   }, []);
 
   const { showAlert, showConfirm, showPrompt } = dialogs;
@@ -98,19 +112,22 @@ export default function useAppState(userId) {
     document.body.classList.toggle("market-mode-active", marketMode);
   }, [marketMode]);
 
-  const { total, pendingPricesCount, checkedCount, groupedItems, marketGroupedItems, expiringPantryCount, budgetPercent, budgetColor, priceChanges, maxDelta } = useListView(state, { groupByCategory, itemSort, itemSearch, itemFilter });
+  const categoryOrder = state.categoryOrder || DEFAULT_CATEGORY_ORDER;
+
+  const { total, pendingPricesCount, checkedCount, groupedItems, marketGroupedItems, expiringPantryCount, budgetPercent, budgetColor, priceChanges, maxDelta } = useListView(state, { groupByCategory, itemSort, itemSearch, itemFilter, categoryOrder });
 
   const handleNameChange = (value) => {
     setItemName(value);
     setItemCategory(detectCategory(value));
   };
+
   const handleAddItem = (event) => {
     event.preventDefault();
     const price = parseCurrencyInput(itemPriceDisplay);
     const qty = Number(String(itemQty).replace(",", "."));
     const name = itemName.trim();
     if (!name || Number.isNaN(qty) || qty <= 0)
-      return showToast("Confira o nome e a quantidade do item.");
+      return toast.error("Confira o nome e a quantidade do item.");
     setState((previous) => ({
       ...previous,
       items: [
@@ -132,7 +149,9 @@ export default function useAppState(userId) {
     setItemPriceDisplay("");
     setItemQty("1");
     triggerHaptic();
+    toast.success(`"${name}" adicionado à lista!`);
   };
+
   const handleToggleItem = (id) => {
     triggerHaptic();
     setState((previous) => ({
@@ -142,12 +161,64 @@ export default function useAppState(userId) {
       ),
     }));
   };
-  const handleRemoveItem = (id) =>
-    setState((previous) => ({
-      ...previous,
-      items: previous.items.filter((item) => item.id !== id),
+
+  // Remove com suporte a Desfazer (Undo) via react-hot-toast
+  const handleRemoveItem = (id) => {
+    const itemToRemove = state.items.find((item) => item.id === id);
+    if (!itemToRemove) return;
+
+    const previousItems = state.items;
+    const removedIndex = previousItems.findIndex((item) => item.id === id);
+
+    setState((prev) => ({
+      ...prev,
+      items: prev.items.filter((item) => item.id !== id),
       note: null,
     }));
+    triggerHaptic();
+
+    toast(
+      (t) => (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, justifyContent: "space-between", width: "100%" }}>
+          <span style={{ fontSize: 13 }}>
+            <strong>{itemToRemove.name}</strong> removido.
+          </span>
+          <button
+            type="button"
+            style={{
+              padding: "4px 10px",
+              fontSize: 12,
+              fontWeight: 700,
+              background: "#2563eb",
+              color: "#fff",
+              border: 0,
+              borderRadius: 6,
+              cursor: "pointer",
+            }}
+            onClick={() => {
+              toast.dismiss(t.id);
+              setState((current) => {
+                // Evita duplicidade caso clique mais de uma vez
+                if (current.items.some((item) => item.id === itemToRemove.id)) {
+                  return current;
+                }
+                const restored = [...current.items];
+                const safeIndex = Math.min(Math.max(0, removedIndex), restored.length);
+                restored.splice(safeIndex, 0, itemToRemove);
+                return { ...current, items: restored };
+              });
+              toast.success(`"${itemToRemove.name}" restaurado!`, { id: `restored-${id}` });
+              triggerHaptic();
+            }}
+          >
+            Desfazer
+          </button>
+        </div>
+      ),
+      { duration: 5000, id: `undo-item-${id}` }
+    );
+  };
+
   const openEditItem = (item) => {
     setEditItem(item);
     setEditName(item.name);
@@ -158,33 +229,35 @@ export default function useAppState(userId) {
       item.pricePending ? "" : maskCurrency(Math.round(item.price * 100)),
     );
   };
+
   const handleSaveEdit = () => {
     if (!editItem) return;
     const name = editName.trim();
     const qty = Number(String(editQty).replace(",", "."));
     if (!name || Number.isNaN(qty) || qty <= 0)
-      return showToast("Confira o nome e a quantidade.");
+      return toast.error("Confira o nome e a quantidade.");
     const price = parseCurrencyInput(editPriceDisplay);
     setState((previous) => ({
       ...previous,
       items: previous.items.map((item) =>
         item.id === editItem.id
           ? {
-              ...item,
-              name,
-              qty,
-              unit: editUnit,
-              category: editCategory,
-              price,
-              pricePending: !editPriceDisplay.trim(),
-            }
+            ...item,
+            name,
+            qty,
+            unit: editUnit,
+            category: editCategory,
+            price,
+            pricePending: !editPriceDisplay.trim(),
+          }
           : item,
       ),
     }));
     setEditItem(null);
     triggerHaptic();
-    showToast("Item atualizado!");
+    toast.success("Item atualizado!");
   };
+
   const handleSetItemPrice = async (id) => {
     const item = state.items.find((entry) => entry.id === id);
     if (!item) return;
@@ -195,7 +268,7 @@ export default function useAppState(userId) {
     );
     if (answer === null) return;
     const value = parseCurrencyInput(answer);
-    if (Number.isNaN(value) || value < 0) return showToast("Informe um preço válido.");
+    if (Number.isNaN(value) || value < 0) return toast.error("Informe um preço válido.");
     setState((previous) => ({
       ...previous,
       items: previous.items.map((entry) =>
@@ -204,7 +277,9 @@ export default function useAppState(userId) {
       note: null,
     }));
     triggerHaptic();
+    toast.success("Preço atualizado!");
   };
+
   const handleSetBudget = async () => {
     const answer = await showPrompt(
       "Valor limite de orçamento para esta compra:",
@@ -214,12 +289,13 @@ export default function useAppState(userId) {
     if (answer === null) return;
     const value = parseCurrencyInput(answer);
     setState((previous) => ({ ...previous, budget: value }));
-    showToast(
-      value > 0
-        ? `Meta ajustada para ${formatCurrency(value)}`
-        : "Meta de orçamento removida.",
-    );
+    if (value > 0) {
+      toast.success(`Meta ajustada para ${formatCurrency(value)}`);
+    } else {
+      toast("Meta de orçamento removida.");
+    }
   };
+
   const handleFinishPurchase = async () => {
     if (!state.items.length)
       return showAlert(
@@ -273,8 +349,9 @@ export default function useAppState(userId) {
       };
     });
     setMarketMode(false);
-    showToast("Compra finalizada e despensa abastecida!");
+    toast.success("Compra finalizada e despensa abastecida! 🛒🎉");
   };
+
   const handleRestockPantry = (item) => {
     setState((previous) => ({
       ...previous,
@@ -293,8 +370,9 @@ export default function useAppState(userId) {
       ],
     }));
     triggerHaptic();
-    showToast(`"${item.name}" adicionado à lista!`);
+    toast.success(`"${item.name}" adicionado à lista!`);
   };
+
   const handleConsumePantry = async (index) => {
     const item = state.pantry[index];
     if (!item) return;
@@ -306,7 +384,7 @@ export default function useAppState(userId) {
     if (value === null) return;
     const quantity = Number(String(value).replace(",", "."));
     if (Number.isNaN(quantity) || quantity <= 0 || quantity > item.qty)
-      return showToast("Quantidade inválida.");
+      return toast.error("Quantidade inválida.");
     setState((previous) => ({
       ...previous,
       pantry: previous.pantry.map((entry, itemIndex) =>
@@ -316,14 +394,18 @@ export default function useAppState(userId) {
       ),
     }));
     triggerHaptic();
+    toast.success(`Baixa registrada para "${item.name}"!`);
   };
-  const handleUpdatePantryExpiry = (index, expiry) =>
+
+  const handleUpdatePantryExpiry = (index, expiry) => {
     setState((previous) => ({
       ...previous,
       pantry: previous.pantry.map((item, itemIndex) =>
         itemIndex === index ? { ...item, expiry } : item,
       ),
     }));
+    toast.success("Validade salva!");
+  };
 
   const handleClearPantry = async () => {
     if (!state.pantry || state.pantry.length === 0) return;
@@ -344,7 +426,7 @@ export default function useAppState(userId) {
         pantry: [],
       }));
       triggerHaptic();
-      showToast("Despensa esvaziada com sucesso!");
+      toast.success("Despensa esvaziada com sucesso!");
     }
   };
 
@@ -368,8 +450,74 @@ export default function useAppState(userId) {
         history: previous.history.filter((_, i) => i !== originalIndex),
       }));
       triggerHaptic();
-      showToast("Compra excluída do histórico!");
+      toast.success("Compra excluída do histórico!");
     }
+  };
+
+  // Mover categoria para cima/baixo na ordem da rota
+  const handleMoveCategoryOrder = (catKey, direction) => {
+    const order = [...(state.categoryOrder || DEFAULT_CATEGORY_ORDER)];
+    const index = order.indexOf(catKey);
+    if (index === -1) return;
+    const targetIndex = direction === "up" ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= order.length) return;
+
+    // Troca
+    const temp = order[index];
+    order[index] = order[targetIndex];
+    order[targetIndex] = temp;
+
+    setState((prev) => ({ ...prev, categoryOrder: order }));
+    triggerHaptic();
+  };
+
+  const handleResetCategoryOrder = () => {
+    setState((prev) => ({ ...prev, categoryOrder: [...DEFAULT_CATEGORY_ORDER] }));
+    toast.success("Ordem dos corredores restaurada para o padrão!");
+  };
+
+  // Compartilhamento via WhatsApp
+  const handleShareWhatsApp = () => {
+    if (!state.items || state.items.length === 0) {
+      return toast.error("Sua lista está vazia!");
+    }
+
+    const title = `🛒 *Lista de Compras${state.market ? ` - ${state.market}` : ""}*`;
+    const order = state.categoryOrder || DEFAULT_CATEGORY_ORDER;
+    const grouped = order.reduce((acc, catKey) => {
+      const items = state.items.filter((item) => (item.category || detectCategory(item.name)) === catKey);
+      if (items.length > 0) acc[catKey] = items;
+      return acc;
+    }, {});
+
+    // Agrupa itens restantes se houver
+    state.items.forEach((item) => {
+      const cat = item.category || detectCategory(item.name);
+      if (!grouped[cat]) {
+        grouped[cat] = [item];
+      }
+    });
+
+    let text = `${title}\n📅 ${new Date().toLocaleDateString("pt-BR")}\n\n`;
+
+    Object.entries(grouped).forEach(([catKey, items]) => {
+      const catInfo = CATEGORIES[catKey] || { label: "Outros", icon: "📦" };
+      text += `${catInfo.icon} *${catInfo.label.toUpperCase()}*\n`;
+      items.forEach((item) => {
+        const check = item.checked ? "✅" : "⬜";
+        const priceStr = item.price > 0 ? ` - ${formatCurrency(item.price * item.qty)}` : "";
+        text += `${check} ${item.name} (${item.qty} ${item.unit}${priceStr})\n`;
+      });
+      text += "\n";
+    });
+
+    text += `💰 *Total Previsto:* ${formatCurrency(total)}\n`;
+    text += `_Gerado por naLista_`;
+
+    const encoded = encodeURIComponent(text);
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encoded}`;
+    window.open(whatsappUrl, "_blank");
+    toast.success("Abrindo WhatsApp...");
   };
 
   const handleBackup = () => {
@@ -381,7 +529,9 @@ export default function useAppState(userId) {
     link.download = "na-lista-backup.json";
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast.success("Backup exportado!");
   };
+
   const handleRestore = async (event) => {
     try {
       const file = event.target.files?.[0];
@@ -419,7 +569,7 @@ export default function useAppState(userId) {
         )
       ) {
         setState({ ...createInitialState(), ...parsed });
-        showToast("Backup restaurado com sucesso!");
+        toast.success("Backup restaurado com sucesso!");
       }
     } catch {
       showAlert("Arquivo de backup inválido.", "Erro no Backup");
@@ -434,6 +584,7 @@ export default function useAppState(userId) {
     setShowOcrReview(false);
     setIsScannerOpen(true);
   };
+
   const handleUseOcr = () => {
     const detectedName = ocrText
       .split("\n")
@@ -446,8 +597,9 @@ export default function useAppState(userId) {
         maskCurrency(Math.round(Number(detectedPrice[0].replace(",", ".")) * 100)),
       );
     setIsScannerOpen(false);
-    showToast("Campos preenchidos a partir da etiqueta!");
+    toast.success("Campos preenchidos a partir da etiqueta!");
   };
+
   const handlePhotoCapture = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -480,12 +632,14 @@ export default function useAppState(userId) {
           throw new Error("QR sem link válido.");
         setQrUrl(url.href);
         setIsScannerOpen(false);
-        showToast("QR Code reconhecido!");
+        toast.success("QR Code reconhecido!");
       }
     } catch (error) {
       setScanStatus(error.message || "Erro ao processar imagem.");
+      toast.error("Erro ao ler código ou etiqueta.");
     }
   };
+
   const handleCheckReceipt = () => {
     if (state.items.some((item) => item.pricePending))
       return showAlert(
@@ -505,7 +659,9 @@ export default function useAppState(userId) {
       total: receiptTotal,
       tax,
     });
+    toast.success("Nota conferida com a lista!");
   };
+
   const handleXmlUpload = async (event) => {
     try {
       const file = event.target.files?.[0];
@@ -534,7 +690,7 @@ export default function useAppState(userId) {
           };
         }),
       );
-      showToast("XML importado com sucesso!");
+      toast.success("XML importado com sucesso!");
     } catch {
       showAlert("Arquivo XML inválido.", "Erro no XML");
     }
@@ -559,7 +715,9 @@ export default function useAppState(userId) {
     itemFilter,
     setItemFilter,
     syncStatus,
-    toastMessage,
+    categoryOrder,
+    isRouteModalOpen,
+    setIsRouteModalOpen,
     total,
     pendingPricesCount,
     checkedCount,
@@ -622,6 +780,9 @@ export default function useAppState(userId) {
     handleUpdatePantryExpiry,
     handleClearPantry,
     handleDeleteHistoryItem,
+    handleMoveCategoryOrder,
+    handleResetCategoryOrder,
+    handleShareWhatsApp,
     handleBackup,
     handleRestore,
     openScanner,

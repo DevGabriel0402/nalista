@@ -1,9 +1,9 @@
 import { useCallback, useMemo } from 'react';
-import { detectCategory } from '../utils.js';
+import { DEFAULT_CATEGORY_ORDER, detectCategory } from '../utils.js';
 
 export const itemKey = (item) => `${item.name.trim().toLocaleLowerCase()}|${item.unit}`;
 
-export default function useListView(state, { groupByCategory, itemSort, itemSearch, itemFilter }) {
+export default function useListView(state, { groupByCategory, itemSort, itemSearch, itemFilter, categoryOrder = DEFAULT_CATEGORY_ORDER }) {
   const total = useMemo(
     () => Math.round(state.items.reduce((sum, item) => sum + item.qty * (item.price || 0), 0) * 100) / 100,
     [state.items],
@@ -37,25 +37,51 @@ export default function useListView(state, { groupByCategory, itemSort, itemSear
       return matchesSearch && matchesFilter;
     });
   }, [itemFilter, itemSearch, state.items]);
+
   const groupItems = useCallback(
-    (items) => sortItems(items).reduce((groups, item) => {
-      const category = item.category || detectCategory(item.name);
-      groups[category] ??= [];
-      groups[category].push(item);
-      return groups;
-    }, {}),
-    [sortItems],
+    (items) => {
+      const sorted = sortItems(items);
+      const groups = sorted.reduce((acc, item) => {
+        const category = item.category || detectCategory(item.name);
+        acc[category] ??= [];
+        acc[category].push(item);
+        return acc;
+      }, {});
+
+      // Ordenar as chaves de categoria de acordo com categoryOrder (corredor/rota)
+      const orderedGroups = {};
+      const order = Array.isArray(categoryOrder) && categoryOrder.length > 0 ? categoryOrder : DEFAULT_CATEGORY_ORDER;
+      
+      order.forEach((catKey) => {
+        if (groups[catKey]) {
+          orderedGroups[catKey] = groups[catKey];
+        }
+      });
+
+      // Incluir qualquer outra categoria presente que não esteja no categoryOrder
+      Object.keys(groups).forEach((catKey) => {
+        if (!orderedGroups[catKey]) {
+          orderedGroups[catKey] = groups[catKey];
+        }
+      });
+
+      return orderedGroups;
+    },
+    [categoryOrder, sortItems],
   );
+
   const groupedItems = useMemo(
     () => (groupByCategory ? groupItems(filteredItems) : { all: sortItems(filteredItems) }),
     [filteredItems, groupByCategory, groupItems, sortItems],
   );
   const marketGroupedItems = useMemo(() => groupItems(state.items), [groupItems, state.items]);
+
   const expiringPantryCount = useMemo(() => {
     const limit = new Date();
     limit.setDate(limit.getDate() + 5);
     return state.pantry.filter((item) => item.expiry && item.expiry <= limit.toLocaleDateString('en-CA')).length;
   }, [state.pantry]);
+
   const budgetPercent = useMemo(
     () => state.budget > 0 ? Math.min(100, Math.round((total / state.budget) * 100)) : 0,
     [state.budget, total],
@@ -65,6 +91,7 @@ export default function useListView(state, { groupByCategory, itemSort, itemSear
     : budgetPercent > 80
       ? '#f59e0b'
       : '#2563eb';
+
   const priceChanges = useMemo(() => {
     const latest = state.history.at(-1);
     const previous = state.history.at(-2);

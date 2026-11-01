@@ -34,6 +34,17 @@ export const CATEGORIES = {
   outros: { id: 'outros', label: 'Outros', icon: '📦', color: '#475569' }
 };
 
+export const DEFAULT_CATEGORY_ORDER = [
+  'hortifruti',
+  'padaria',
+  'laticinios',
+  'acougue',
+  'mercearia',
+  'bebidas',
+  'limpeza',
+  'outros'
+];
+
 const KEYWORD_MAP = {
   hortifruti: ['maca', 'maçã', 'banana', 'tomate', 'cebola', 'batata', 'cenoura', 'alface', 'laranja', 'limao', 'limão', 'alho', 'abacaxi', 'manga', 'uva', 'morango', 'melancia', 'maracuja', 'maracujá', 'abacate', 'mamao', 'mamão', 'couve', 'brocolis', 'brócolis'],
   acougue: ['carne', 'frango', 'peixe', 'bife', 'alcatra', 'picanha', 'patinho', 'moida', 'moída', 'coxa', 'sobrecoxa', 'linguica', 'linguiça', 'salame', 'presunto', 'bacon', 'salsicha', 'file', 'filé'],

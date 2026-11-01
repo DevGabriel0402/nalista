@@ -260,7 +260,7 @@ src/
 │   ├── Navigation.jsx
 │   └── ShoppingList.jsx
 ├── hooks/
-│   ├── useAppState.js
+│   ├── useAppState.jsx
 │   └── useAuth.js
 ├── firebase.js
 ├── useSync.js
@@ -280,7 +280,7 @@ src/
 - `components/Navigation.jsx`: navegação desktop, mobile e logout.
 - `components/Modals.jsx`: edição, diálogos, notas fiscais e scanner.
 - `hooks/useAuth.js`: sessão e operações do Firebase Authentication.
-- `hooks/useAppState.js`: estado, cálculos e ações da aplicação.
+- `hooks/useAppState.jsx`: estado, cálculos e ações da aplicação.
 - `firebase.js`: inicialização condicional do Firebase.
 - `useSync.js`: persistência local e sincronização com Firestore.
 - `utils.js`: moeda, categorias, detecção e feedback tátil.

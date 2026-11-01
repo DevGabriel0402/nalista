@@ -5,6 +5,8 @@ import {
   LuDownload,
   LuPlus,
   LuReceipt,
+  LuRoute,
+  LuShare2,
   LuUpload,
   LuPencil,
   LuX,
@@ -37,6 +39,8 @@ export default function ShoppingList({
     handleSetBudget,
     handleBackup,
     handleRestore,
+    handleShareWhatsApp,
+    setIsRouteModalOpen,
     openScanner,
     openReceipt,
     setState,
@@ -165,17 +169,33 @@ export default function ShoppingList({
             </div>
           </details>
         </form>
+
         {state.items.length > 0 && (
           <div className="list-toolbar">
-            <input className="list-search" type="search" value={itemSearch} onChange={(event) => setItemSearch(event.target.value)} placeholder="Buscar item..." aria-label="Buscar item" />
-            <select aria-label="Filtrar itens" value={itemFilter} onChange={(event) => setItemFilter(event.target.value)}>
+            <input
+              className="list-search"
+              type="search"
+              value={itemSearch}
+              onChange={(event) => setItemSearch(event.target.value)}
+              placeholder="Buscar item..."
+              aria-label="Buscar item"
+            />
+            <select
+              aria-label="Filtrar itens"
+              value={itemFilter}
+              onChange={(event) => setItemFilter(event.target.value)}
+            >
               <option value="all">Todos</option>
               <option value="unchecked">Pendentes</option>
               <option value="checked">Marcados</option>
               <option value="pending-price">Sem preço</option>
             </select>
             <label htmlFor="item-sort">Ordenar:</label>
-            <select id="item-sort" value={itemSort} onChange={(event) => setItemSort(event.target.value)}>
+            <select
+              id="item-sort"
+              value={itemSort}
+              onChange={(event) => setItemSort(event.target.value)}
+            >
               <option value="added">Adição</option>
               <option value="price-desc">Maior preço</option>
               <option value="price-asc">Menor preço</option>
@@ -184,13 +204,33 @@ export default function ShoppingList({
             </select>
             <button
               type="button"
-              style={{ fontSize: 11, padding: "4px 10px", background: "transparent" }}
+              className="toolbar-btn"
               onClick={() => setGroupByCategory(!groupByCategory)}
+              title={groupByCategory ? "Desagrupar corredores" : "Agrupar por corredor"}
             >
-              {groupByCategory ? "📂 Desagrupar" : "📁 Agrupar por corredor"}
+              {groupByCategory ? "📂 Desagrupar" : "📁 Corredores"}
+            </button>
+            {groupByCategory && (
+              <button
+                type="button"
+                className="toolbar-btn route-config-btn"
+                onClick={() => setIsRouteModalOpen(true)}
+                title="Configurar a ordem dos corredores / rota"
+              >
+                <LuRoute size={13} /> Ordem da rota
+              </button>
+            )}
+            <button
+              type="button"
+              className="toolbar-btn whatsapp-share-btn"
+              onClick={handleShareWhatsApp}
+              title="Compartilhar lista no WhatsApp"
+            >
+              <LuShare2 size={13} /> WhatsApp
             </button>
           </div>
         )}
+
         <div id="items">
           {state.items.length === 0 ? (
             <div className="empty">
@@ -262,6 +302,7 @@ export default function ShoppingList({
                           type="button"
                           aria-label={`Remover ${item.name}`}
                           onClick={() => handleRemoveItem(item.id)}
+                          title="Remover"
                         >
                           <LuX size={17} />
                         </button>
@@ -276,6 +317,7 @@ export default function ShoppingList({
             </>
           )}
         </div>
+
         <div className="simple-total">
           <span>
             {pendingPricesCount > 0
@@ -323,6 +365,9 @@ export default function ShoppingList({
             </button>
             <button type="button" onClick={openReceipt}>
               <LuReceipt size={15} /> Conferir nota fiscal
+            </button>
+            <button type="button" onClick={handleShareWhatsApp}>
+              <LuShare2 size={15} /> Compartilhar no WhatsApp
             </button>
           </div>
           <p style={{ marginTop: 14, fontSize: 12, color: "var(--color-text-muted)" }}>

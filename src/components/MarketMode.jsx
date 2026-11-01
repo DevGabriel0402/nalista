@@ -1,7 +1,7 @@
-import { LuCheck, LuLogOut, LuShoppingCart, LuStore, LuTarget } from 'react-icons/lu';
+import { LuCheck, LuLogOut, LuRoute, LuShoppingCart, LuStore, LuTarget } from 'react-icons/lu';
 import { CATEGORIES, formatCurrency } from '../utils.js';
 
-export default function MarketMode({ state, total, checkedCount, pendingPricesCount, budgetPercent, budgetColor, groupedItems, onToggleItem, onExit, onFinish }) {
+export default function MarketMode({ state, total, checkedCount, pendingPricesCount, budgetPercent, budgetColor, groupedItems, onToggleItem, onExit, onFinish, onOpenRoute }) {
   return (
     <div className="market-mode-ui">
       <div className="market-header">
@@ -11,6 +11,11 @@ export default function MarketMode({ state, total, checkedCount, pendingPricesCo
         </div>
         <div className="market-header-right">
           <div className="market-total-display"><small>{pendingPricesCount > 0 ? 'parcial' : 'total'}</small><strong>{total}</strong></div>
+          {onOpenRoute && (
+            <button type="button" className="market-exit-btn" onClick={onOpenRoute} title="Alterar ordem da rota no mercado">
+              <LuRoute size={15} /> Rota
+            </button>
+          )}
           <button type="button" className="market-exit-btn" onClick={onExit}><LuLogOut size={15} /> Sair</button>
         </div>
       </div>
