@@ -324,6 +324,54 @@ export default function useAppState(userId) {
         itemIndex === index ? { ...item, expiry } : item,
       ),
     }));
+
+  const handleClearPantry = async () => {
+    if (!state.pantry || state.pantry.length === 0) return;
+    const answer = await showPrompt(
+      "Esta ação removerá TODOS os itens da sua despensa de forma definitiva.",
+      "",
+      "Esvaziar Despensa",
+      {
+        danger: true,
+        requiredKeyword: "excluir",
+        confirmLabel: "Excluir Tudo",
+      },
+    );
+    if (!answer) return;
+    if (answer.trim().toLowerCase() === "excluir") {
+      setState((previous) => ({
+        ...previous,
+        pantry: [],
+      }));
+      triggerHaptic();
+      showToast("Despensa esvaziada com sucesso!");
+    }
+  };
+
+  const handleDeleteHistoryItem = async (originalIndex) => {
+    const item = state.history[originalIndex];
+    if (!item) return;
+    const answer = await showPrompt(
+      `Deseja realmente excluir a compra de ${item.date} (${item.market || "Mercado"})? Esta ação não pode ser desfeita.`,
+      "",
+      "Excluir Registro de Compra",
+      {
+        danger: true,
+        requiredKeyword: "excluir",
+        confirmLabel: "Excluir Registro",
+      },
+    );
+    if (!answer) return;
+    if (answer.trim().toLowerCase() === "excluir") {
+      setState((previous) => ({
+        ...previous,
+        history: previous.history.filter((_, i) => i !== originalIndex),
+      }));
+      triggerHaptic();
+      showToast("Compra excluída do histórico!");
+    }
+  };
+
   const handleBackup = () => {
     const url = URL.createObjectURL(
       new Blob([JSON.stringify(state, null, 2)], { type: "application/json" }),
@@ -572,6 +620,8 @@ export default function useAppState(userId) {
     handleRestockPantry,
     handleConsumePantry,
     handleUpdatePantryExpiry,
+    handleClearPantry,
+    handleDeleteHistoryItem,
     handleBackup,
     handleRestore,
     openScanner,

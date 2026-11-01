@@ -21,12 +21,14 @@ export default function useDialogs() {
   );
 
   const showConfirm = useCallback(
-    (message, title = 'Confirmação') =>
+    (message, title = 'Confirmação', options = {}) =>
       new Promise((resolve) => {
         setDialogState({
           type: 'confirm',
           title,
           message,
+          danger: options.danger,
+          confirmLabel: options.confirmLabel,
           onConfirm: () => {
             setDialogState(null);
             resolve(true);
@@ -41,13 +43,16 @@ export default function useDialogs() {
   );
 
   const showPrompt = useCallback(
-    (message, defaultValue = '', title = 'Preencher') =>
+    (message, defaultValue = '', title = 'Preencher', options = {}) =>
       new Promise((resolve) => {
         setDialogInput(defaultValue);
         setDialogState({
           type: 'prompt',
           title,
           message,
+          danger: options.danger,
+          requiredKeyword: options.requiredKeyword,
+          confirmLabel: options.confirmLabel,
           onConfirm: (value) => {
             setDialogState(null);
             resolve(value);

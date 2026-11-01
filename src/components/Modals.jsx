@@ -1,4 +1,4 @@
-import { LuCamera, LuCheck, LuCircleHelp, LuInfo, LuPencil, LuReceipt, LuScanLine, LuX } from 'react-icons/lu';
+import { LuCamera, LuCheck, LuCircleHelp, LuInfo, LuPencil, LuReceipt, LuScanLine, LuTrash2, LuX } from 'react-icons/lu';
 import { formatCurrency } from '../utils.js';
 
 const stopPropagation = (event) => event.stopPropagation();
@@ -23,12 +23,74 @@ export function EditItemModal({ data, actions }) {
 
 export function DialogModal({ dialog, input, setInput }) {
   if (!dialog) return null;
-  return <div className="modal-overlay"><div className="dialog-modal-card" onClick={stopPropagation}>
-    <div className="dialog-modal-header"><span className="dialog-modal-icon">{dialog.type === 'alert' ? <LuInfo size={22} color="#3b82f6" /> : dialog.type === 'confirm' ? <LuCircleHelp size={22} color="#f59e0b" /> : <LuPencil size={22} color="#8b5cf6" />}</span><h3 className="dialog-modal-title">{dialog.title}</h3></div>
-    <p className="dialog-modal-message">{dialog.message}</p>
-    {dialog.type === 'prompt' && <input className="dialog-modal-input" autoFocus value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') dialog.onConfirm(input); }} />}
-    <div className="dialog-modal-buttons">{dialog.type !== 'alert' && <button type="button" onClick={dialog.onCancel}>Cancelar</button>}<button type="button" className="primary" onClick={() => dialog.type === 'prompt' ? dialog.onConfirm(input) : dialog.onConfirm()}>{dialog.type === 'confirm' ? 'Confirmar' : 'OK'}</button></div>
-  </div></div>;
+  const isDanger = Boolean(dialog.danger);
+  const keywordMatches = !dialog.requiredKeyword || input.trim().toLowerCase() === dialog.requiredKeyword.trim().toLowerCase();
+  const canConfirm = dialog.type === 'prompt' ? (dialog.requiredKeyword ? keywordMatches : true) : true;
+
+  const handleConfirm = () => {
+    if (!canConfirm) return;
+    if (dialog.type === 'prompt') {
+      dialog.onConfirm(input);
+    } else {
+      dialog.onConfirm();
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className={`dialog-modal-card ${isDanger ? 'dialog-modal-card--danger' : ''}`} onClick={stopPropagation}>
+        <div className="dialog-modal-header">
+          <span className="dialog-modal-icon">
+            {isDanger ? (
+              <LuTrash2 size={24} color="#ef4444" />
+            ) : dialog.type === 'alert' ? (
+              <LuInfo size={22} color="#3b82f6" />
+            ) : dialog.type === 'confirm' ? (
+              <LuCircleHelp size={22} color="#f59e0b" />
+            ) : (
+              <LuPencil size={22} color="#8b5cf6" />
+            )}
+          </span>
+          <h3 className="dialog-modal-title">{dialog.title}</h3>
+        </div>
+        <p className="dialog-modal-message">{dialog.message}</p>
+        {dialog.type === 'prompt' && (
+          <div className="dialog-modal-prompt-wrap">
+            {dialog.requiredKeyword && (
+              <div className="dialog-modal-keyword-hint">
+                Digite exatamente <strong>{dialog.requiredKeyword}</strong> para confirmar:
+              </div>
+            )}
+            <input
+              className={`dialog-modal-input ${isDanger ? 'dialog-modal-input--danger' : ''}`}
+              autoFocus
+              value={input}
+              placeholder={dialog.requiredKeyword ? `Digite "${dialog.requiredKeyword}"` : ''}
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') handleConfirm();
+              }}
+            />
+          </div>
+        )}
+        <div className="dialog-modal-buttons">
+          {dialog.type !== 'alert' && (
+            <button type="button" onClick={dialog.onCancel}>
+              Cancelar
+            </button>
+          )}
+          <button
+            type="button"
+            className={isDanger ? 'danger-btn' : 'primary'}
+            disabled={!canConfirm}
+            onClick={handleConfirm}
+          >
+            {dialog.confirmLabel || (dialog.type === 'confirm' ? 'Confirmar' : 'OK')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function ReceiptModal({ data, actions }) {

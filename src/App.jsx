@@ -2,7 +2,7 @@ import { LuShoppingCart } from 'react-icons/lu';
 import MarketMode from './components/MarketMode.jsx';
 import ShoppingList from './components/ShoppingList.jsx';
 import DataPages from './components/DataPages.jsx';
-import { DesktopSidebar, MobileIsland, MobileNavigation } from './components/Navigation.jsx';
+import { DesktopSidebar, MobileIsland, MobileNavigation, TopBar } from './components/Navigation.jsx';
 import { DialogModal, EditItemModal, ReceiptModal, ScannerModal } from './components/Modals.jsx';
 import AuthPage from './components/AuthPage.jsx';
 import { CATEGORIES, detectCategory, formatCurrency, maskCurrency } from './utils.js';
@@ -66,12 +66,12 @@ export default function App() {
     setItemPriceDisplay: app.setItemPriceDisplay
   };
   return <>
-    <MobileIsland total={formatCurrency(app.total)} hasPendingPrices={app.pendingPricesCount > 0} onScan={() => app.openScanner('label')} />
+    <TopBar darkMode={app.darkMode} syncStatus={app.syncStatus} onToggleTheme={() => app.setDarkMode((value) => !value)} onSignOut={auth.signOut} onScan={() => app.openScanner('label')} />
     <DesktopSidebar page={app.page} darkMode={app.darkMode} syncStatus={app.syncStatus} expiringPantryCount={app.expiringPantryCount} onSelect={app.setPage} onToggleTheme={() => app.setDarkMode((value) => !value)} onSignOut={auth.signOut} />
     <main>
       {app.marketMode && app.page === 'lista' ? (
         <MarketMode state={app.state} total={formatCurrency(app.total)} checkedCount={app.checkedCount} pendingPricesCount={app.pendingPricesCount} budgetPercent={app.budgetPercent} budgetColor={app.budgetColor} groupedItems={app.marketGroupedItems} onToggleItem={app.handleToggleItem} onExit={() => app.setMarketMode(false)} onFinish={app.handleFinishPurchase} />
-      ) : <><PageHeader page={app.page} onMarket={app.setMarketMode} />{app.page === 'lista' ? <ShoppingList state={app.state} total={app.total} budgetPercent={app.budgetPercent} budgetColor={app.budgetColor} pendingPricesCount={app.pendingPricesCount} checkedCount={app.checkedCount} groupedItems={app.groupedItems} groupByCategory={app.groupByCategory} itemSort={app.itemSort} itemSearch={app.itemSearch} itemFilter={app.itemFilter} refs={{ restoreInputRef: app.restoreInputRef }} handlers={shoppingHandlers} /> : <DataPages page={app.page} state={app.state} priceChanges={app.priceChanges} maxDelta={app.maxDelta} expiringPantryCount={app.expiringPantryCount} handlers={{ handleConsumePantry: app.handleConsumePantry, handleRestockPantry: app.handleRestockPantry, handleUpdatePantryExpiry: app.handleUpdatePantryExpiry }} />}</>}
+      ) : <><PageHeader page={app.page} onMarket={app.setMarketMode} />{app.page === 'lista' ? <ShoppingList state={app.state} total={app.total} budgetPercent={app.budgetPercent} budgetColor={app.budgetColor} pendingPricesCount={app.pendingPricesCount} checkedCount={app.checkedCount} groupedItems={app.groupedItems} groupByCategory={app.groupByCategory} itemSort={app.itemSort} itemSearch={app.itemSearch} itemFilter={app.itemFilter} refs={{ restoreInputRef: app.restoreInputRef }} handlers={shoppingHandlers} /> : <DataPages page={app.page} state={app.state} priceChanges={app.priceChanges} maxDelta={app.maxDelta} expiringPantryCount={app.expiringPantryCount} handlers={{ handleConsumePantry: app.handleConsumePantry, handleRestockPantry: app.handleRestockPantry, handleUpdatePantryExpiry: app.handleUpdatePantryExpiry, handleClearPantry: app.handleClearPantry, handleDeleteHistoryItem: app.handleDeleteHistoryItem }} />}</>}
     </main>
     <MobileNavigation page={app.page} marketMode={app.marketMode} expiringPantryCount={app.expiringPantryCount} onSelect={app.setPage} onMarket={app.setMarketMode} />
     <EditItemModal
@@ -81,21 +81,21 @@ export default function App() {
     <DialogModal dialog={app.dialogState} input={app.dialogInput} setInput={app.setDialogInput} />
     <ReceiptModal
       data={{ open: app.isReceiptOpen, qrUrl: app.qrUrl, total: app.receiptTotalDisplay, tax: app.receiptTaxDisplay, reconciliation: app.reconciliation, xmlItems: app.xmlItems, setQrUrl: app.setQrUrl, setTotal: app.setReceiptTotalDisplay, setTax: app.setReceiptTaxDisplay, maskCurrency }}
-        actions={{
-          close: () => app.setIsReceiptOpen(false),
-          openScanner: app.openScanner,
-          openOfficialLink: () => {
-            try {
-              const url = new URL(app.qrUrl);
-              if (!['https:', 'http:'].includes(url.protocol)) throw new Error();
-              window.open(url.href, '_blank', 'noopener,noreferrer');
-            } catch {
-              app.showAlert('Informe um link de consulta válido.', 'Link Inválido');
-            }
-          },
-          uploadXml: app.handleXmlUpload,
-          check: app.handleCheckReceipt
-        }}
+      actions={{
+        close: () => app.setIsReceiptOpen(false),
+        openScanner: app.openScanner,
+        openOfficialLink: () => {
+          try {
+            const url = new URL(app.qrUrl);
+            if (!['https:', 'http:'].includes(url.protocol)) throw new Error();
+            window.open(url.href, '_blank', 'noopener,noreferrer');
+          } catch {
+            app.showAlert('Informe um link de consulta válido.', 'Link Inválido');
+          }
+        },
+        uploadXml: app.handleXmlUpload,
+        check: app.handleCheckReceipt
+      }}
     />
     <ScannerModal
       data={{ open: app.isScannerOpen, mode: app.scannerMode, fileRef: app.fileInputRef, status: app.scanStatus, text: app.ocrText, showReview: app.showOcrReview, setText: app.setOcrText }}

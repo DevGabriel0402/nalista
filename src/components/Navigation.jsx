@@ -14,6 +14,9 @@ import {
   LuTrendingUp
 } from 'react-icons/lu';
 
+import Logo from "../../public/icon.svg"
+
+
 const navigationItems = [
   { id: 'lista', label: 'Lista', Icon: LuClipboardList },
   { id: 'historico', label: 'Compras', Icon: LuHistory },
@@ -21,16 +24,38 @@ const navigationItems = [
   { id: 'despensa', label: 'Despensa', Icon: LuPackage }
 ];
 
-function SyncStatus({ status }) {
-  const statuses = {
-    saving: <><LuLoader size={13} className="spin" /> Salvando…</>,
-    saved: <><LuCloud size={13} /> Sincronizado</>,
-    offline: <><LuCloudOff size={13} /> Modo offline</>,
-    error: <><LuCloudOff size={13} /> Erro ao sincronizar</>,
-    idle: <><LuCloudUpload size={13} /> Aguardando…</>
+// const Logo = `<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192"><rect width="192" height="192" rx="44" fill="#0a5a9c"/><rect x="57" y="43" width="78" height="111" rx="17" fill="none" stroke="#fff" stroke-width="8"/><path d="M79 43v-9h34v18H79z" fill="#fff"/><path d="m76 82 5 5 9-11m11 8h17m-42 26 5 5 9-11m11 8h17m-42 26h42" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+// `;
+
+function SyncStatus({ status, showLabel = true }) {
+  const icons = {
+    saving: <LuLoader size={16} className="spin" />,
+    saved: <LuCloud size={16} />,
+    offline: <LuCloudOff size={16} />,
+    error: <LuCloudOff size={16} />,
+    idle: <LuCloudUpload size={16} />
   };
 
-  return <div className={`sync-status sync-${status}`}>{statuses[status]}</div>;
+  const labels = {
+    saving: 'Carregando...',
+    saved: 'Sincronizado',
+    offline: 'Offline',
+    error: 'Erro de sincronização',
+    idle: 'Sincronizando...'
+  };
+
+  const title = labels[status] || 'Sincronização';
+
+  return (
+    <div
+      className={`sync-status sync-${status} ${showLabel ? 'sync-status--full' : 'sync-status--icon-only'}`}
+      title={title}
+      aria-label={title}
+    >
+      {icons[status]}
+      {showLabel && <span>{labels[status]}</span>}
+    </div>
+  );
 }
 
 function NavigationButton({ item, page, badge, onSelect }) {
@@ -47,7 +72,9 @@ function NavigationButton({ item, page, badge, onSelect }) {
 export function DesktopSidebar({ page, darkMode, syncStatus, expiringPantryCount, onSelect, onToggleTheme, onSignOut }) {
   return (
     <aside>
-      <div className="logo">▧ na<span>lista</span></div>
+      <div className="logo">
+        <img style={{ width: 32, height: 32 }} src={Logo} alt="Logo" />
+        na<span>lista</span></div>
       <p>SUPERMERCADO INTELIGENTE</p>
       <nav aria-label="Navegação principal">
         {navigationItems.map((item) => (
@@ -67,13 +94,38 @@ export function DesktopSidebar({ page, darkMode, syncStatus, expiringPantryCount
         <button type="button" className="theme-toggle-btn" onClick={onSignOut}>
           <LuLogOut size={14} /> Sair da conta
         </button>
-        <SyncStatus status={syncStatus} />
+        <SyncStatus status={syncStatus} showLabel={true} />
       </div>
     </aside>
   );
 }
 
-export function MobileIsland({ total, hasPendingPrices, onScan }) {
+export function TopBar({ darkMode, syncStatus, onToggleTheme, onSignOut, onScan }) {
+  return (
+    <header className="topbar">
+      <div className="topbar-brand">
+        <div className="logo">
+          <img style={{ width: 32, height: 32 }} src={Logo} alt="Logo" />
+          na<span>lista</span>
+        </div>
+      </div>
+      <div className="topbar-actions">
+        <SyncStatus status={syncStatus} showLabel={false} />
+        <button type="button" className="topbar-btn" onClick={onScan} aria-label="Fotografar etiqueta">
+          <LuCamera size={16} />
+        </button>
+        <button type="button" className="topbar-btn" onClick={onToggleTheme} aria-label="Alternar tema">
+          {darkMode ? <LuSun size={16} /> : <LuMoon size={16} />}
+        </button>
+        <button type="button" className="topbar-btn signout-btn" onClick={onSignOut} aria-label="Sair da conta" title="Sair da conta">
+          <LuLogOut size={16} />
+        </button>
+      </div>
+    </header>
+  );
+}
+
+export function MobileIsland({ total, hasPendingPrices }) {
   return (
     <div className="mobile-island">
       <span className="pulse"></span>
@@ -81,9 +133,6 @@ export function MobileIsland({ total, hasPendingPrices, onScan }) {
         <small>{hasPendingPrices ? 'Total parcial' : 'Total da lista'}</small>
         <b>{total}</b>
       </div>
-      <button type="button" onClick={onScan} aria-label="Fotografar etiqueta">
-        <LuCamera size={17} />
-      </button>
     </div>
   );
 }
